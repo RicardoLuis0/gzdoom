@@ -1941,9 +1941,24 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTA(a);
 		if (PA == nullptr)
 		{
+			ThrowAbortException(X_READ_NIL, nullptr);
+			return 0;
+		}
+		NEXTOP;
+
+	OP(MEMCPY_RRK):
+		ASSERTA(a); ASSERTA(B); ASSERTKD(C);
+		if (PA == nullptr)
+		{
 			ThrowAbortException(X_WRITE_NIL, nullptr);
 			return 0;
 		}
+		else if (PB == nullptr)
+		{
+			ThrowAbortException(X_READ_NIL, nullptr);
+			return 0;
+		}
+		memcpy(PA, PB, KC);
 		NEXTOP;
 
 	OP(NOP):

@@ -292,4 +292,7 @@ xx(EQA_K,		beq,	CPRK,		EQA_R,	4, REGT_POINTER)
 // Null check
 xx(NULLCHECK, nullcheck, RP,	NOP, 0, 0) // EmitNullPointerThrow(pA)
 
+// Memcpy
+xx(MEMCPY_RRK,	memcpy,	RPRPKI,		NOP,	0, 0)
+
 #undef xx

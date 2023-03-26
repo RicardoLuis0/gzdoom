@@ -2541,10 +2541,17 @@ FxExpression *FxAssign::Resolve(FCompileContext &ctx)
 					btype = p;
 				}
 			}
+			constexpr auto BETTER_ASSIGN_VER = MakeVersion(4, 11, 1);
 
 			if (btype->isDynArray())
 			{
-				if(ctx.Version >= MakeVersion(4, 11, 1))
+				if (IsModifyAssign)
+				{
+					ScriptPosition.Message(MSG_ERROR, "Invalid modify/assign operation with a DynArray operand");
+					delete this;
+					return nullptr;
+				}
+				else if(ctx.Version >= BETTER_ASSIGN_VER)
 				{
 					FArgumentList args;
 					args.Push(Right);
@@ -2572,7 +2579,13 @@ FxExpression *FxAssign::Resolve(FCompileContext &ctx)
 			}
 			else if (btype->isMap())
 			{
-				if(ctx.Version >= MakeVersion(4, 11, 1))
+				if (IsModifyAssign)
+				{
+					ScriptPosition.Message(MSG_ERROR, "Invalid modify/assign operation with a Map operand");
+					delete this;
+					return nullptr;
+				}
+				else if(ctx.Version >= BETTER_ASSIGN_VER)
 				{
 					FArgumentList args;
 					args.Push(Right);
@@ -2606,7 +2619,13 @@ FxExpression *FxAssign::Resolve(FCompileContext &ctx)
 			}
 			else if (btype->isStruct())
 			{
-				if(ctx.Version < MakeVersion(4, 11, 1))
+				if (IsModifyAssign)
+				{
+					ScriptPosition.Message(MSG_ERROR, "Invalid modify/assign operation with a struct operand");
+					delete this;
+					return nullptr;
+				}
+				else if(ctx.Version < BETTER_ASSIGN_VER)
 				{
 					if(Base->ValueType->isRealPointer() && Right->ValueType->isRealPointer())
 					{ // don't break existing code, but warn that it's a no-op

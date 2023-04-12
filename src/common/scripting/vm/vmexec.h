@@ -1964,7 +1964,10 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		}
 		memcpy(PA, PB, KC);
 		NEXTOP;
-
+	OP(OBJ_WBARRIER):
+		ASSERTA(a);
+		GC::WriteBarrier((DObject*)PA);
+		NEXTOP;
 	OP(NOP):
 		NEXTOP;
 	}

@@ -49,6 +49,7 @@
 #include "vm.h"
 #include "actorinlines.h"
 #include "g_game.h"
+#include "i_time.h"
 
 CVAR (Int, cl_rockettrails, 1, CVAR_ARCHIVE);
 CVAR (Bool, r_rail_smartspiral, false, CVAR_ARCHIVE);
@@ -99,11 +100,33 @@ static const struct ColorList {
 	{NULL, 0, 0, 0 }
 };
 
+static int ParticleCount;
+static float ParticleThinkMs;
+static float ParticleThinkMsAvg[5];
+static uint64_t ParticleCreateNs;
+static float ParticleCreateMsAvg[5];
+static int ticAvgPos = 0;
+
+ADD_STAT(particles)
+{
+	FString str;
+	float ParticleCreateMs = ParticleCreateNs / 1000000.0f;
+	str.Format(
+		"Particle Count: %d, Particle Think Time: %.2f ms, Particle Create Time: %.2f ms\n"
+		"Average Particle Think Time (6tic): %.2f ms, Average Particle Create Time (6tic): %.2f ms\n"
+		, ParticleCount, ParticleThinkMs, ParticleCreateMs,
+		((ParticleThinkMsAvg[0] + ParticleThinkMsAvg[1] + ParticleThinkMsAvg[2] + ParticleThinkMsAvg[3] + ParticleThinkMsAvg[4] + ParticleThinkMs) / 6.0f),
+		((ParticleCreateMsAvg[0] + ParticleCreateMsAvg[1] + ParticleCreateMsAvg[2] + ParticleCreateMsAvg[3] + ParticleCreateMsAvg[4] + ParticleCreateMs) / 6.0f)
+	);
+	return str;
+}
+
 inline particle_t *NewParticle (FLevelLocals *Level, bool replace = false)
 {
 	particle_t *result = nullptr;
 	// [MC] Thanks to RaveYard and randi for helping me with this addition.
 	// Array's filled up
+	uint64_t startNs = I_nsTime();
 	if (Level->InactiveParticles == NO_PARTICLE)
 	{
 		if (replace)
@@ -137,6 +160,7 @@ inline particle_t *NewParticle (FLevelLocals *Level, bool replace = false)
 			result->tnext = tnext;
 			result->tprev = tprev;
 		}
+		ParticleCreateNs += (I_nsTime() - startNs);
 		return result;
 	}
 	
@@ -157,6 +181,7 @@ inline particle_t *NewParticle (FLevelLocals *Level, bool replace = false)
 	{
 		Level->OldestParticle = Level->ActiveParticles;
 	}
+	ParticleCreateNs += (I_nsTime() - startNs);
 	return result;
 }
 
@@ -265,10 +290,13 @@ void P_InitEffects ()
 
 void P_ThinkParticles (FLevelLocals *Level)
 {
+	uint64_t startNs = I_nsTime();
+	ParticleCount = 0;
 	int i = Level->ActiveParticles;
 	particle_t *particle = nullptr, *prev = nullptr;
 	while (i != NO_PARTICLE)
 	{
+		ParticleCount++;
 		particle = &Level->Particles[i];
 		i = particle->tnext;
 		if (Level->isFrozen() && !(particle->flags &PT_NOTIMEFREEZE))
@@ -332,6 +360,13 @@ void P_ThinkParticles (FLevelLocals *Level)
 		}
 		prev = particle;
 	}
+	ParticleThinkMsAvg[ticAvgPos] = ParticleThinkMs;
+	ParticleCreateMsAvg[ticAvgPos] = ParticleCreateNs / 1000000.0f;
+
+	ticAvgPos = (ticAvgPos + 1) % 5;
+
+	ParticleCreateNs = 0;
+	ParticleThinkMs = ( I_nsTime() - startNs) / 1000000.0f;
 }
 
 enum PSFlag

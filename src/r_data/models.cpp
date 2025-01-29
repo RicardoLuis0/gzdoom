@@ -313,7 +313,7 @@ void calcFrames(const ModelAnim &curAnim, double tic, ModelAnimFrameInterp &to, 
 	}
 }
 
-void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpriteModelFrame *smf, const FState *curState, const int curTics, FTranslationID translation, AActor* actor)
+CalcModelFrameInfo CalcModelFrame(FLevelLocals *Level, const FSpriteModelFrame *smf, const FState *curState, const int curTics, AActor* actor)
 {
 	// [BB] Frame interpolation: Find the FSpriteModelFrame smfNext which follows after smf in the animation
 	// and the scalar value inter ( element of [0,1) ), both necessary to determine the interpolated frame.
@@ -327,6 +327,12 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 
 	ModelAnimFrameInterp decoupled_frame;
 
+	double tic = actor->Level->totaltime;
+	if ((ConsoleState == c_up || ConsoleState == c_rising) && (menuactive == MENU_Off || menuactive == MENU_OnNoPause) && !actor->isFrozen())
+	{
+		tic += I_GetTimeFrac();
+	}
+
 	// if prev_frame == -1: interpolate(main_frame, next_frame, inter), else: interpolate(interpolate(main_prev_frame, main_frame, inter_main), interpolate(next_prev_frame, next_frame, inter_next), inter)
 	// 4-way interpolation is needed to interpolate animation switches between animations that aren't 35hz
 
@@ -335,12 +341,6 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 		smfNext = smf = &BaseSpriteModelFrames[actor->GetClass()];
 		if(actor->modelData && !(actor->modelData->curAnim.flags & MODELANIM_NONE))
 		{
-			double tic = actor->Level->totaltime;
-			if ((ConsoleState == c_up || ConsoleState == c_rising) && (menuactive == MENU_Off || menuactive == MENU_OnNoPause) && !actor->isFrozen())
-			{
-				tic += I_GetTimeFrac();
-			}
-
 			calcFrames(actor->modelData->curAnim, tic, decoupled_frame, inter);
 		}
 	}
@@ -392,6 +392,40 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 	{
 		if (actor->modelData->models.Size() > modelsamount)
 			modelsamount = actor->modelData->models.Size();
+	}
+
+	return
+	{
+		smf_flags,
+		smfNext,
+		inter,
+		is_decoupled,
+		decoupled_frame,
+		tic,
+		modelsamount
+	};
+}
+
+void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpriteModelFrame *smf, const FState *curState, const int curTics, FTranslationID translation, AActor* actor)
+{
+	int smf_flags;
+	const FSpriteModelFrame * smfNext;
+	float inter;
+	bool is_decoupled;
+	ModelAnimFrameInterp decoupled_frame;
+	double tic;
+	unsigned modelsamount;
+
+	{
+		//TODO just use info straight up, but would need quite a bit of refactoring
+		CalcModelFrameInfo info = CalcModelFrame(Level, smf, curState, curTics, actor);
+		smf_flags = info.smf_flags;
+		smfNext = info.smfNext;
+		inter = info.inter;
+		is_decoupled = info.is_decoupled;
+		decoupled_frame = info.decoupled_frame;
+		tic = info.tic;
+		modelsamount = info.modelsamount;
 	}
 
 	TArray<FTextureID> surfaceskinids;

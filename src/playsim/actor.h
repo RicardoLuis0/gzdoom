@@ -724,22 +724,26 @@ struct AnimModelOverride
 
 enum EModelDataFlags
 {
-	MODELDATA_HADMODEL =		1 << 0,
-	MODELDATA_OVERRIDE_FLAGS =	1 << 1,
+	MODELDATA_HADMODEL =				1 << 0,
+	MODELDATA_OVERRIDE_FLAGS =			1 << 1,
+	MODELDATA_GET_BONE_INFO  =			1 << 2,
+	MODELDATA_GET_BONE_INFO_RECALC  =	1 << 3, // RECALCULATE BONE INFO WHEN STATE/ANIMATION CHANGES, MIGHT GET EXPENSIVE
 };
 
 class DActorModelData : public DObject
 {
 	DECLARE_CLASS(DActorModelData, DObject);
 public:
-	PClass *					modelDef;
-	TArray<ModelOverride>		models;
-	TArray<FTextureID>			skinIDs;
-	TArray<AnimModelOverride>	animationIDs;
-	TArray<int>					modelFrameGenerators;
-	int							flags;
-	int							overrideFlagsSet;
-	int							overrideFlagsClear;
+	PClass *					 modelDef;
+	TArray<ModelOverride>		 models;
+	TArray<FTextureID>			 skinIDs;
+	TArray<AnimModelOverride>	 animationIDs;
+	TArray<int>					 modelFrameGenerators;
+	TArray<TArray<BoneOverride>> modelBoneOverrides;
+	TArray<TArray<BoneInfo>>	 modelBoneInfo;
+	int							 flags;
+	int							 overrideFlagsSet;
+	int							 overrideFlagsClear;
 
 	ModelAnim curAnim;
 	ModelAnimFrame prevAnim; // used for interpolation when switching anims
@@ -810,6 +814,8 @@ public:
 	virtual void PostBeginPlay() override;		// Called immediately before the actor's first tick
 	virtual void Tick() override;
 	void EnableNetworking(const bool enable) override;
+
+	void CalcBones(bool recalc);
 
 	static AActor *StaticSpawn (FLevelLocals *Level, PClassActor *type, const DVector3 &pos, replace_t allowreplacement, bool SpawningMapThing = false);
 

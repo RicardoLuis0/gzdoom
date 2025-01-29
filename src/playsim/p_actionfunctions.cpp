@@ -5113,6 +5113,7 @@ static void CleanupModelData(AActor * mobj)
 		&& mobj->modelData->modelFrameGenerators.Size() == 0
 		&& mobj->modelData->skinIDs.Size() == 0
 		&& mobj->modelData->animationIDs.Size() == 0
+		&& mobj->modelData->modelBoneOverrides.Size() == 0
 		&& mobj->modelData->modelDef == nullptr
 		&&(mobj->modelData->flags & ~MODELDATA_HADMODEL) == 0 )
 	{
@@ -5150,7 +5151,11 @@ void SetAnimationInternal(AActor * self, FName animName, double framerate, int s
 
 	if(animName == NAME_None)
 	{
+		if(self->modelData->curAnim.flags & MODELANIM_NONE) return;
+
 		self->modelData->curAnim.flags = MODELANIM_NONE;
+		self->CalcBones(true);
+
 		return;
 	}
 
@@ -5190,8 +5195,12 @@ void SetAnimationInternal(AActor * self, FName animName, double framerate, int s
 
 	if(animStart == FErr_NotFound)
 	{
-		self->modelData->curAnim.flags = MODELANIM_NONE;
 		Printf("Could not find animation %s\n", animName.GetChars());
+		if(self->modelData->curAnim.flags & MODELANIM_NONE) return;
+
+		self->modelData->curAnim.flags = MODELANIM_NONE;
+		self->CalcBones(true);
+
 		return;
 	}
 
@@ -5240,20 +5249,32 @@ void SetAnimationInternal(AActor * self, FName animName, double framerate, int s
 
 	if(startFrame >= len)
 	{
-		self->modelData->curAnim.flags = MODELANIM_NONE;
 		Printf("frame %d (startFrame) is past the end of animation %s\n", startFrame, animName.GetChars());
+		if(self->modelData->curAnim.flags & MODELANIM_NONE) return;
+
+		self->modelData->curAnim.flags = MODELANIM_NONE;
+		self->CalcBones(true);
+
 		return;
 	}
 	else if(loopFrame >= len)
 	{
-		self->modelData->curAnim.flags = MODELANIM_NONE;
 		Printf("frame %d (loopFrame) is past the end of animation %s\n", startFrame, animName.GetChars());
+		if(self->modelData->curAnim.flags & MODELANIM_NONE) return;
+
+		self->modelData->curAnim.flags = MODELANIM_NONE;
+		self->CalcBones(true);
+
 		return;
 	}
 	else if(endFrame >= len)
 	{
-		self->modelData->curAnim.flags = MODELANIM_NONE;
 		Printf("frame %d (endFrame) is past the end of animation %s\n", endFrame, animName.GetChars());
+		if(self->modelData->curAnim.flags & MODELANIM_NONE) return;
+
+		self->modelData->curAnim.flags = MODELANIM_NONE;
+		self->CalcBones(true);
+
 		return;
 	}
 	
@@ -5275,6 +5296,8 @@ void SetAnimationInternal(AActor * self, FName animName, double framerate, int s
 		self->modelData->curAnim.startTic = tic;
 		self->modelData->curAnim.switchOffset = 0;
 	}
+
+	self->CalcBones(true);
 }
 
 void SetAnimationNative(AActor * self, int i_animName, double framerate, int startFrame, int loopFrame, int endFrame, int interpolateTics, int flags)
@@ -5512,6 +5535,11 @@ void ChangeModelNative(
 	}
 
 	CleanupModelData(mobj);
+
+	if(animation != NAME_None || modeldef != nullptr)
+	{
+		mobj->CalcBones(true);
+	}
 
 	return;
 }

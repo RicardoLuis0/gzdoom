@@ -4216,6 +4216,14 @@ DEFINE_ACTION_FUNCTION(AActor, CheckPortalTransition)
 	return 0;
 }
 
+void AActor::CalcBones(bool recalc)
+{
+	if(modelData && (!recalc || (modelData->flags & MODELDATA_GET_BONE_INFO_RECALC)) && modelData->flags & MODELDATA_GET_BONE_INFO)
+	{
+		//TODO
+	}
+}
+
 //
 // P_MobjThinker
 //
@@ -4256,6 +4264,8 @@ void AActor::Tick ()
 		if (res)
 			return;
 	}
+
+	CalcBones(false);
 
 	if (freezetics > 0)
 	{

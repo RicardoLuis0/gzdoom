@@ -934,6 +934,8 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 			}
 		}
 
+		CalcBones(true);
+
 		if (!nofunction)
 		{
 			FState *returned_state;
@@ -961,6 +963,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 		flags8 |= MF8_RECREATELIGHTS;
 		Level->flags3 |= LEVEL3_LIGHTCREATED;
 	}
+
 	return true;
 }
 
@@ -4265,12 +4268,15 @@ void AActor::Tick ()
 			return;
 	}
 
-	CalcBones(false);
-
 	if (freezetics > 0)
 	{
 		freezetics--;
 		return;
+	}
+
+	if(flags9 & MF9_DECOUPLEDANIMATIONS)
+	{
+		CalcBones(false);
 	}
 
 	AActor *onmo;
@@ -4832,6 +4838,11 @@ void AActor::Tick ()
 			if (!SetState(state->GetNextState()))
 				return; 		// freed itself
 		}
+	}
+
+	if(!(flags9 & MF9_DECOUPLEDANIMATIONS) && modelData && !(modelData->flags & MODELDATA_GET_BONE_INFO_RECALC))
+	{
+		CalcBones(false);
 	}
 
 	if (tics == -1 || state->GetCanRaise())

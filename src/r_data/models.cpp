@@ -590,7 +590,7 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 
 	bool is_decoupled = (actor->flags9 & MF9_DECOUPLEDANIMATIONS);
 
-	DActorModelData* modelData = actor ? actor->modelData : nullptr;
+	DActorModelData* modelData = actor ? actor->modelData.ForceGet() : nullptr;
 
 	CalcModelFrameInfo frameinfo = CalcModelFrame(Level, smf, curState, curTics, modelData, actor, is_decoupled, tic);
 	ModelDrawInfo drawinfo;

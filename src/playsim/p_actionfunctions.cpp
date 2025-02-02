@@ -5359,29 +5359,60 @@ void SetAnimationFrameRateUINative(AActor * self, double framerate)
 	SetAnimationFrameRateInternal(self, framerate, I_GetTimeFrac());
 }
 
-void SetModelFlag(AActor * self, int flag)
+void SetModelFlag(AActor * self, int flag, int iqmFlag)
 {
 	EnsureModelData(self);
-	self->modelData->flags |= MODELDATA_OVERRIDE_FLAGS;
-	self->modelData->overrideFlagsSet |= flag;
-	self->modelData->overrideFlagsClear &= ~flag;
+
+	iqmFlag &= MODELDATA_IQMFLAGS;
+
+	if(flag)
+	{
+		self->modelData->flags |= MODELDATA_OVERRIDE_FLAGS;
+		self->modelData->overrideFlagsSet |= flag;
+		self->modelData->overrideFlagsClear &= ~flag;
+	}
+
+	if(iqmFlag)
+	{
+		self->modelData->flags |= iqmFlag;
+	}
 }
 
-void ClearModelFlag(AActor * self, int flag)
+void ClearModelFlag(AActor * self, int flag, int iqmFlag)
 {
 	EnsureModelData(self);
-	self->modelData->flags |= MODELDATA_OVERRIDE_FLAGS;
-	self->modelData->overrideFlagsClear |= flag;
-	self->modelData->overrideFlagsSet &= ~flag;
+
+	iqmFlag &= MODELDATA_IQMFLAGS;
+
+	if(flag)
+	{
+		self->modelData->flags |= MODELDATA_OVERRIDE_FLAGS;
+		self->modelData->overrideFlagsClear |= flag;
+		self->modelData->overrideFlagsSet &= ~flag;
+	}
+
+	if(iqmFlag)
+	{
+		self->modelData->flags &= ~iqmFlag;
+	}
+	
 }
 
-void ResetModelFlags(AActor * self)
+void ResetModelFlags(AActor * self, int resetModel, int resetIqm)
 {
 	if(self->modelData)
 	{
-		self->modelData->overrideFlagsClear = 0;
-		self->modelData->overrideFlagsSet = 0;
-		self->modelData->flags &= ~MODELDATA_OVERRIDE_FLAGS;
+		if(resetModel)
+		{
+			self->modelData->overrideFlagsClear = 0;
+			self->modelData->overrideFlagsSet = 0;
+			self->modelData->flags &= ~MODELDATA_OVERRIDE_FLAGS;
+		}
+
+		if(resetIqm)
+		{
+			self->modelData->flags &= ~MODELDATA_IQMFLAGS;
+		}
 	}
 }
 
@@ -5621,8 +5652,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetModelFlag, SetModelFlag)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_INT(flag);
+	PARAM_INT(flagIqm);
 
-	SetModelFlag(self, flag);
+	SetModelFlag(self, flag, flagIqm);
 
 	return 0;
 }
@@ -5631,8 +5663,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, ClearModelFlag, ClearModelFlag)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_INT(flag);
+	PARAM_INT(flagIqm);
 
-	ClearModelFlag(self, flag);
+	ClearModelFlag(self, flag, flagIqm);
 
 	return 0;
 }
@@ -5640,8 +5673,10 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, ClearModelFlag, ClearModelFlag)
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, ResetModelFlags, ResetModelFlags)
 {
 	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_BOOL(resetModel);
+	PARAM_BOOL(resetIqm);
 	
-	ResetModelFlags(self);
+	ResetModelFlags(self, resetModel, resetIqm);
 
 	return 0;
 }

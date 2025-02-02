@@ -408,32 +408,14 @@ CalcModelFrameInfo CalcModelFrame(FLevelLocals *Level, const FSpriteModelFrame *
 
 void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpriteModelFrame *smf, const FState *curState, const int curTics, FTranslationID translation, AActor* actor)
 {
-	int smf_flags;
-	const FSpriteModelFrame * smfNext;
-	float inter;
-	bool is_decoupled;
-	ModelAnimFrameInterp decoupled_frame;
-	double tic;
-	unsigned modelsamount;
-
-	{
-		//TODO just use info straight up, but would need quite a bit of refactoring
-		CalcModelFrameInfo info = CalcModelFrame(Level, smf, curState, curTics, actor);
-		smf_flags = info.smf_flags;
-		smfNext = info.smfNext;
-		inter = info.inter;
-		is_decoupled = info.is_decoupled;
-		decoupled_frame = info.decoupled_frame;
-		tic = info.tic;
-		modelsamount = info.modelsamount;
-	}
+	CalcModelFrameInfo info = CalcModelFrame(Level, smf, curState, curTics, actor);
 
 	TArray<FTextureID> surfaceskinids;
 
 	int boneStartingPosition = -1;
 	bool evaluatedSingle = false;
 
-	for (unsigned i = 0; i < modelsamount; i++)
+	for (unsigned i = 0; i < info.modelsamount; i++)
 	{
 		int modelid = -1;
 		int animationid = -1;
@@ -468,31 +450,31 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 			{
 				animationid = smf->animationIDs[i];
 			}
-			if(!is_decoupled)
+			if(!info.is_decoupled)
 			{
 				//modelFrame
 				if (actor->modelData->modelFrameGenerators.Size() > i
-				 && (unsigned)actor->modelData->modelFrameGenerators[i] < modelsamount
+				 && (unsigned)actor->modelData->modelFrameGenerators[i] < info.modelsamount
 				 && smf->modelframes[actor->modelData->modelFrameGenerators[i]] >= 0
 				   ) {
 					modelframe = smf->modelframes[actor->modelData->modelFrameGenerators[i]];
 
-					if (smfNext) 
+					if (info.smfNext) 
 					{
-						if(smfNext->modelframes[actor->modelData->modelFrameGenerators[i]] >= 0)
+						if(info.smfNext->modelframes[actor->modelData->modelFrameGenerators[i]] >= 0)
 						{
-							modelframenext = smfNext->modelframes[actor->modelData->modelFrameGenerators[i]];
+							modelframenext = info.smfNext->modelframes[actor->modelData->modelFrameGenerators[i]];
 						}
 						else
 						{
-							modelframenext = smfNext->modelframes[i];
+							modelframenext = info.smfNext->modelframes[i];
 						}
 					}
 				}
 				else if(smf->modelsAmount > i)
 				{
 					modelframe = smf->modelframes[i];
-					if (smfNext) modelframenext = smfNext->modelframes[i];
+					if (info.smfNext) modelframenext = info.smfNext->modelframes[i];
 				}
 			}
 
@@ -538,7 +520,7 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 			modelid = smf->modelIDs[i];
 			animationid = smf->animationIDs[i];
 			modelframe = smf->modelframes[i];
-			if (smfNext) modelframenext = smfNext->modelframes[i];
+			if (info.smfNext) modelframenext = info.smfNext->modelframes[i];
 			skinid = smf->skinIDs[i];
 		}
 
@@ -553,7 +535,7 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 					   : (((i * MD3_MAX_SURFACES) < smf->surfaceskinIDs.Size()) ? &smf->surfaceskinIDs[i * MD3_MAX_SURFACES] : nullptr);
 
 
-			bool nextFrame = smfNext && modelframe != modelframenext;
+			bool nextFrame = info.smfNext && modelframe != modelframenext;
 
 
 			// [RL0] while per-model animations aren't done, DECOUPLEDANIMATIONS does the same as MODELSAREATTACHMENTS
@@ -569,26 +551,26 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 					animationData = animation->AttachAnimationData();
 				}
 
-				if(is_decoupled)
+				if(info.is_decoupled)
 				{
-					if(decoupled_frame.frame1 >= 0)
+					if(info.decoupled_frame.frame1 >= 0)
 					{
-						boneData = animation->CalculateBones(actor->modelData->prevAnim, decoupled_frame, inter, animationData, actor->modelData->modelBoneOverrides.Size() > i ? &actor->modelData->modelBoneOverrides[i] : nullptr, nullptr, tic);
+						boneData = animation->CalculateBones(actor->modelData->prevAnim, info.decoupled_frame, info.inter, animationData, actor->modelData->modelBoneOverrides.Size() > i ? &actor->modelData->modelBoneOverrides[i] : nullptr, nullptr, info.tic);
 					}
 				}
 				else
 				{
-					boneData = animation->CalculateBones(nullptr, {nextFrame ? inter : -1.0f, modelframe, modelframenext}, -1.0f, animationData, (actor->modelData && actor->modelData->modelBoneOverrides.Size() > i) ? &actor->modelData->modelBoneOverrides[i] : nullptr, nullptr, tic);
+					boneData = animation->CalculateBones(nullptr, {nextFrame ? info.inter : -1.0f, modelframe, modelframenext}, -1.0f, animationData, (actor->modelData && actor->modelData->modelBoneOverrides.Size() > i) ? &actor->modelData->modelBoneOverrides[i] : nullptr, nullptr, info.tic);
 				}
 
-				if(smf_flags & MDL_MODELSAREATTACHMENTS || is_decoupled)
+				if(info.smf_flags & MDL_MODELSAREATTACHMENTS || info.is_decoupled)
 				{
 					boneStartingPosition = boneData ? screen->mBones->UploadBones(*boneData) : -1;
 					evaluatedSingle = true;
 				}
 			}
 
-			mdl->RenderFrame(renderer, tex, modelframe, nextFrame ? modelframenext : modelframe, nextFrame ? inter : -1.f, translation, ssidp, boneStartingPosition);
+			mdl->RenderFrame(renderer, tex, modelframe, nextFrame ? modelframenext : modelframe, nextFrame ? info.inter : -1.f, translation, ssidp, boneStartingPosition);
 		}
 	}
 }

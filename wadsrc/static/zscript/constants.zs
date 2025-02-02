@@ -1528,3 +1528,9 @@ enum EVisualThinkerFlags
 	VTF_DontInterpolate	= 1 << 4, // disable all interpolation
 	VTF_AddLightLevel	= 1 << 5, // adds sector light level to 'LightLevel'
 };
+
+enum EIQMFlags
+{
+	IQM_GET_BONE_INFO  =		1 << 2,
+	IQM_GET_BONE_INFO_RECALC  =	1 << 3, // RECALCULATE BONE INFO INSTANTLY WHEN STATE/ANIMATION CHANGES, MIGHT GET EXPENSIVE
+};

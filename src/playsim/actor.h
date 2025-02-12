@@ -749,7 +749,7 @@ public:
 	TArray<AnimModelOverride>	 animationIDs;
 	TArray<int>					 modelFrameGenerators;
 	TArray<TArray<BoneOverride>> modelBoneOverrides;
-	TArray<TArray<BoneInfo>>	 modelBoneInfo;
+	TArray<BoneInfo>			 modelBoneInfo;
 	int							 flags;
 	int							 overrideFlagsSet;
 	int							 overrideFlagsClear;
@@ -825,6 +825,7 @@ public:
 	void EnableNetworking(const bool enable) override;
 
 	void CalcBones(bool recalc);
+	TRS GetBone(int model_index, int bone_index, bool with_override);
 
 	static AActor *StaticSpawn (FLevelLocals *Level, PClassActor *type, const DVector3 &pos, replace_t allowreplacement, bool SpawningMapThing = false);
 

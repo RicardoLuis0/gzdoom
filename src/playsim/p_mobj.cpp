@@ -101,6 +101,7 @@
 #include "fragglescript/t_fs.h"
 #include "shadowinlines.h"
 #include "model.h"
+#include "models.h"
 #include "d_net.h"
 
 // MACROS ------------------------------------------------------------------
@@ -4218,11 +4219,57 @@ DEFINE_ACTION_FUNCTION(AActor, CheckPortalTransition)
 	return 0;
 }
 
+TRS AActor::GetBone(int model_index, int bone_index, bool with_override)
+{
+	if(modelData && (modelData->flags & MODELDATA_GET_BONE_INFO) && model_index > 0 && bone_index > 0 && modelData->modelBoneInfo.Size() < model_index && modelData->modelBoneInfo[model_index].bones_anim_only.Size() < bone_index)
+	{
+		return with_override ? modelData->modelBoneInfo[model_index].bones_with_override[bone_index] : modelData->modelBoneInfo[model_index].bones_anim_only[bone_index];
+	}
+	return {};
+}
+
 void AActor::CalcBones(bool recalc)
 {
 	if(modelData && (!recalc || (modelData->flags & MODELDATA_GET_BONE_INFO_RECALC)) && modelData->flags & MODELDATA_GET_BONE_INFO)
 	{
-		//TODO
+		if(picnum.isValid()) return; // picnum overrides don't render models
+
+		FSpriteModelFrame *smf = FindModelFrame(this, sprite, frame, false); // dropped flag is for voxels
+
+		if(!smf) return;
+
+		bool is_decoupled = flags9 & MF9_DECOUPLEDANIMATIONS;
+		double tic = Level->totaltime + 1;
+
+		CalcModelFrameInfo frameinfo = CalcModelFrame(Level, smf, state, tics, modelData, this, is_decoupled, tic);
+		
+		ModelDrawInfo drawinfo;
+
+		int boneStartingPosition = -1;
+		bool evaluatedSingle = false;
+
+		modelData->modelBoneInfo.Resize(frameinfo.modelsamount);
+
+		for (unsigned i = 0; i < frameinfo.modelsamount; i++)
+		{
+			if (CalcModelOverrides(i, smf, modelData, frameinfo, drawinfo, is_decoupled))
+			{
+				if(!evaluatedSingle)
+				{ // [Jay] TODO per-model decoupled animations
+					FModel * mdl = Models[drawinfo.modelid];
+					bool nextFrame = frameinfo.smfNext && drawinfo.modelframe != drawinfo.modelframenext;
+					ProcessModelFrame(mdl, nextFrame, i, smf, modelData, frameinfo, drawinfo, is_decoupled, tic, &modelData->modelBoneInfo[i]);
+
+					if(frameinfo.smf_flags & MDL_MODELSAREATTACHMENTS || is_decoupled)
+					{
+						evaluatedSingle = true;
+						//if(!is_decoupled) break;
+
+						break; // TODO remove this break when per-model decoupled animations are in
+					}
+				}
+			}
+		}
 	}
 }
 

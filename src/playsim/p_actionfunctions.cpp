@@ -5123,6 +5123,16 @@ static void CleanupModelData(AActor * mobj)
 	}
 }
 
+static void SetBoneInternal(AActor * self, int index, FQuaternion rotation, int mode, double interpolation_duration, double ticFrac)
+{
+	//TODO
+}
+
+static void SetNamedBoneInternal(AActor * self, FName boneName, FQuaternion rotation, int mode, double interpolation_duration, double ticFrac)
+{
+	//TODO
+}
+
 enum ESetAnimationFlags
 {
 	SAF_INSTANT = 1 << 0,

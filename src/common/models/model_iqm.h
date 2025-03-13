@@ -159,6 +159,14 @@ private:
 	TArray<VSMatrix> baseframe;
 	TArray<VSMatrix> inversebaseframe;
 	TArray<TRS> TRSData;
+public:
+	int NumJoints() override { return Joints.Size(); }
+	int FindJoint(FName name) override
+	{
+		int *j = NamedJoints.CheckKey(name);
+
+		return j ? *j : -1;
+	}
 };
 
 struct IQMReadErrorException { };

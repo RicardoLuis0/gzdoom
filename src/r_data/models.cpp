@@ -523,7 +523,7 @@ const TArray<VSMatrix> * ProcessModelFrame(FModel * animation, bool nextFrame, i
 		animationData = animation->AttachAnimationData();
 	}
 
-	const TArray<VSMatrix> *boneData;
+	const TArray<VSMatrix> *boneData = nullptr;
 
 	if(is_decoupled)
 	{

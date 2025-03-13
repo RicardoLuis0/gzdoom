@@ -5127,6 +5127,8 @@ FQuaternion InterpolateQuat(const FQuaternion &from, const FQuaternion &to, floa
 
 static void SetModelBoneRotationInternal(AActor * self, FModel * mdl, int model_index, int index, FQuaternion rotation, int mode, double interpolation_duration, double switchTic)
 {
+	if(self->modelData->modelBoneOverrides.Size() <= model_index) self->modelData->modelBoneOverrides.Resize(model_index + 1);
+
 	self->modelData->modelBoneOverrides[model_index].Resize(mdl->NumJoints());
 
 	auto &bone = self->modelData->modelBoneOverrides[model_index][index];
@@ -5192,7 +5194,7 @@ static void SetBoneRotationNative(AActor * self, int index, double rot_x, double
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetBoneRotation, SetBoneRotationNative)
 {
-	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_INT(boneindex);
 	PARAM_FLOAT(rot_x);
 	PARAM_FLOAT(rot_y);
@@ -5224,8 +5226,8 @@ static void SetNamedBoneRotationNative(AActor * self, int boneName_i, double rot
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetNamedBoneRotation, SetNamedBoneRotationNative)
 {
-	PARAM_ACTION_PROLOGUE(AActor);
-	PARAM_INT(bonename);
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_NAME(bonename);
 	PARAM_FLOAT(rot_x);
 	PARAM_FLOAT(rot_y);
 	PARAM_FLOAT(rot_z);
@@ -5233,7 +5235,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetNamedBoneRotation, SetNamedBoneRotation
 	PARAM_INT(mode);
 	PARAM_FLOAT(interplen);
 
-	SetNamedBoneRotationNative(self, bonename, rot_x, rot_y, rot_z, rot_w, mode, interplen, 1.0);
+	SetNamedBoneRotationNative(self, bonename.GetIndex(), rot_x, rot_y, rot_z, rot_w, mode, interplen, 1.0);
 
 	return 0;
 }

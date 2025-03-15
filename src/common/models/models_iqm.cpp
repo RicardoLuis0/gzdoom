@@ -610,7 +610,7 @@ inline FQuaternion ModifyBone(FQuaternion orig, FQuaternion rot, int mode)
 
 inline void ModifyBone(const BoneOverride& mod, TRS &bone, double time)
 {
-	double lerp_amt = std::clamp(((time - mod.rot_switchtic) / mod.rot_interplen), 0.0, 1.0);
+	double lerp_amt = mod.rot_interplen > 0.0 ? std::clamp(((time - mod.rot_switchtic) / mod.rot_interplen), 0.0, 1.0) : 1.0;
 
 	if(mod.rot_mode > 0 || (mod.rot_prev_mode > 0 && lerp_amt < 1.0))
 	{

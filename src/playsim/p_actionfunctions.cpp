@@ -5133,8 +5133,8 @@ static void SetModelBoneRotationInternal(AActor * self, FModel * mdl, int model_
 
 	auto &bone = self->modelData->modelBoneOverrides[model_index][index];
 
-	double prev_interp_amt_inv = std::clamp((switchTic - bone.rot_switchtic) / bone.rot_interplen, 0.0, 1.0);
-	double prev_interp_amt = 1.0 - prev_interp_amt_inv;
+	double prev_interp_amt = bone.rot_interplen > 0.0 ? std::clamp(((switchTic - bone.rot_switchtic) / bone.rot_interplen), 0.0, 1.0) : 1.0;
+	double prev_interp_amt_inv = 1.0 - prev_interp_amt;
 
 	bone.rot_prev = bone.rot_mode > 0 ? InterpolateQuat(bone.rot_prev, bone.rot, prev_interp_amt, prev_interp_amt_inv) : FQuaternion(0,0,0,1);
 

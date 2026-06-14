@@ -178,6 +178,7 @@ struct VaryingFieldDesc
 enum
 {
 	SFlag_LegacyShader = 1, // legacy HardwareShader shader, DO NOT REUSE
+	SFlag_Global = 2,
 };
 
 struct UserShaderDesc

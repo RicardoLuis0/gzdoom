@@ -184,10 +184,12 @@ enum
 struct UserShaderDesc
 {
 	FString shader;
+	FString vertshader;
 	MaterialShaderIndex shaderType;
 	FString defines;
 	bool disablealphatest = false;
 	uint8_t shaderFlags = 0;
+	TArray<VaryingFieldDesc> varyings;
 };
 
 extern TArray<UserShaderDesc> usershaders;
